@@ -130,7 +130,7 @@ def test_waterseg(model_path, test_path, test_name, out_path, device):
     :param args: Command line args
     :return: None
     """
-    model = torch.load(model_path)
+    model = torch.load(model_path, weights_only=False)
     test_path = test_path
     out_path = os.path.join(out_path, test_name)
 
