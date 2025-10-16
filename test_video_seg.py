@@ -47,7 +47,7 @@ def main(args, device):
     downsample_size = 480
 
     if os.path.isfile(args.model_path):
-        checkpoint = torch.load(args.model_path)
+        checkpoint = torch.load(args.model_path, map_location=device)
         model.load_state_dict(checkpoint['model'], strict=False)
         print(myutils.gct(), f'Loaded checkpoint {args.model_path}.')
     else:
@@ -80,6 +80,7 @@ def main(args, device):
         image_model_path = './records/link_efficientb4_model.pth'
         test_waterseg(image_model_path, mask_path, args.test_name, out_dir, device)
         # os.remove(temp_first_frame_path) # Clean up the temporary file
+    print()
 
     first_mask = myutils.load_image_in_PIL(mask_path, 'P')
     
@@ -156,13 +157,20 @@ if __name__ == '__main__':
     args = get_args()
     print(myutils.gct(), 'Args =', args)
 
+    # --- Automatic Device Detection (CUDA > MPS > CPU) ---
     if args.gpu >= 0 and torch.cuda.is_available():
         device = torch.device('cuda', args.gpu)
+        print(f"✅ Using NVIDIA GPU (CUDA): cuda:{args.gpu}")
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+        print("✅ Using Apple Silicon GPU (MPS)")
     else:
-        raise ValueError('CUDA is required. --gpu must be >= 0.')
+        raise ValueError('CUDA or MPS is required')
 
-    ### MODIFIED: Changed the check from isdir to isfile for the video
+    # Check if the video file exists
     assert os.path.isfile(args.test_path), f"Video file not found at: {args.test_path}"
 
+    # Run the main function with the detected device
     main(args, device)
+
     print(myutils.gct(), 'Test video segmentation done.')
